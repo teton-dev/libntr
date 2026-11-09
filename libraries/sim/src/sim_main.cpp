@@ -2515,8 +2515,19 @@ static bool s3DClearPending = false;
 void SIM_Begin3DCommand() {
   if (s3DClearPending) {
     s3DClearPending = false;
+    // The 3D buffer, whichever is bound: a game's vblank handler runs while the screen's own
+    // buffer is bound (after the frame is drawn, before it's shown), and a clear there blacked
+    // out the whole frame (Platinum's PC boxes, whose vblank handler sends matrix commands)
+    GLint bound = 0;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &bound);
+    if ((GLuint)bound != g3FrameBuffer) {
+      glBindFramebuffer(GL_FRAMEBUFFER, g3FrameBuffer);
+    }
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    if ((GLuint)bound != g3FrameBuffer) {
+      glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)bound);
+    }
   }
 }
 

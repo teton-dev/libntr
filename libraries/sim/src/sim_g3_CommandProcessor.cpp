@@ -652,7 +652,30 @@ void HandleCommandMessage(draw_msg_t *msg) {
 }
 
 // C APIs
+// A command that draws, or ends a frame: the next frame's 3D starts there (SIM_Begin3DCommand
+// clears the last one). Matrix and state commands don't: games send them at other times too
+// (Platinum's PC boxes, from their vblank handler, with the 3D still to be shown at the next vblank)
+static bool StartsDrawing(int type) {
+    switch (type) {
+    case DRAW_CMD_G3_BEGIN:
+    case DRAW_CMD_G3_VTX:
+    case DRAW_CMD_G3_VTX10:
+    case DRAW_CMD_G3_VTX16:
+    case DRAW_CMD_G3_VTXXY:
+    case DRAW_CMD_G3_VTXXZ:
+    case DRAW_CMD_G3_VTXYZ:
+    case DRAW_CMD_G3_VTXDIFF:
+    case DRAW_CMD_G3_CMD_LIST:
+    case DRAW_CMD_G3_SWAPBUFFERS:
+        return true;
+    default:
+        return false;
+    }
+}
+
 void SIM_HandleG3Command(draw_msg_t * msg) {
-    SIM_Begin3DCommand();
+    if (StartsDrawing(msg->type)) {
+        SIM_Begin3DCommand();
+    }
     SIM::G3::HandleCommandMessage(msg);
 }
